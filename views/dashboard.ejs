@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Welcome</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        
+        .dashboard-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 2rem;
+        }
+        
+        .welcome-section {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        
+        .success-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+        
+        .welcome-message {
+            font-size: 1.5rem;
+            color: #28a745;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+        
+        .user-info {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+        }
+        
+        .user-info h3 {
+            color: #333;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+        
+        .info-item {
+            background: white;
+            padding: 1rem;
+            border-radius: 5px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .info-item strong {
+            color: #333;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+        
+        .info-item span {
+            color: #666;
+        }
+        
+        .features {
+            margin-bottom: 2rem;
+        }
+        
+        .features h3 {
+            color: #333;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+        
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        
+        .feature-card {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+            text-align: center;
+            border: 2px solid #e9ecef;
+            transition: transform 0.2s;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-2px);
+            border-color: #667eea;
+        }
+        
+        .feature-card .icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .feature-card h4 {
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+        
+        .feature-card p {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .actions {
+            text-align: center;
+            margin-top: 2rem;
+        }
+        
+        .logout-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 0.75rem 2rem;
+            border-radius: 5px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .logout-btn:hover {
+            background: #c82333;
+        }
+        
+        .security-badge {
+            display: inline-flex;
+            align-items: center;
+            background: #d4edda;
+            color: #155724;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            margin-top: 1rem;
+        }
+        
+        .security-badge::before {
+            content: "🔒";
+            margin-right: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="header">
+            <h1>🎉 Welcome!</h1>
+            <p>You've successfully logged into the secure system</p>
+        </div>
+        
+        <div class="content">
+            <div class="welcome-section">
+                <div class="success-icon">✅</div>
+                <div class="welcome-message">Authentication Successful!</div>
+                <p>You have passed both primary authentication and two-factor verification.</p>
+                <div class="security-badge">
+                    Secured with 2FA
+                </div>
+            </div>
+            
+            <div class="user-info">
+                <h3>Session Information</h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <strong>👤 Username:</strong>
+                        <span><%= username %></span>
+                    </div>
+                    <div class="info-item">
+                        <strong>🕒 Login Time:</strong>
+                        <span><%= loginTime.toLocaleString() %></span>
+                    </div>
+                    <div class="info-item">
+                        <strong>🔐 Session Status:</strong>
+                        <span>Active & Secure</span>
+                    </div>
+                    <div class="info-item">
+                        <strong>🛡️ Security Level:</strong>
+                        <span>Two-Factor Authenticated</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="features">
+                <h3>Security Features Implemented</h3>
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <div class="icon">🔑</div>
+                        <h4>Primary Authentication</h4>
+                        <p>Username and password verification with input validation</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="icon">📱</div>
+                        <h4>Two-Factor Auth</h4>
+                        <p>Email-based OTP with 60-second expiration</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="icon">🛡️</div>
+                        <h4>Session Management</h4>
+                        <p>Secure session handling with automatic timeout</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="icon">⏰</div>
+                        <h4>Time-Limited Access</h4>
+                        <p>OTP expires in 60 seconds for enhanced security</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="actions">
+                <form method="POST" action="/logout" style="display: inline;">
+                    <button type="submit" class="logout-btn">🚪 Logout</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Display session time
+        setInterval(() => {
+            const now = new Date();
+            const loginTime = new Date('<%= loginTime %>');
+            const duration = Math.floor((now - loginTime) / 1000);
+            const minutes = Math.floor(duration / 60);
+            const seconds = duration % 60;
+            
+            // You could add a session timer display here if needed
+        }, 1000);
+        
+        // Auto-logout warning (optional)
+        setTimeout(() => {
+            if (confirm('Your session will expire soon. Would you like to continue?')) {
+                // You could refresh the session here
+                location.reload();
+            }
+        }, 25 * 60 * 1000); // 25 minutes warning for 30-minute session
+    </script>
+</body>
+</html>
