@@ -1,3 +1,6 @@
+// Load environment variables first
+require('dotenv').config();
+
 // app.js - Main Express Server
 const express = require('express');
 const session = require('express-session');
@@ -6,20 +9,53 @@ const path = require('path');
 const crypto = require('crypto');
 
 const app = express();
-const PORT = 3000;
+
+// Environment Variables Validation
+function validateEnvVars() {
+  const required = ['EMAIL_USER', 'EMAIL_PASS', 'SESSION_SECRET', 'TEST_EMAIL'];
+  const missing = required.filter(key => !process.env[key]);
+  
+  if (missing.length > 0) {
+    console.error('❌ Missing required environment variables:', missing);
+    console.error('Please check your .env file and ensure all required variables are set.');
+    process.exit(1);
+  }
+  
+  console.log('✅ All required environment variables are loaded');
+}
+
+// Validate environment variables on startup
+validateEnvVars();
+
+// Configuration object using environment variables
+const config = {
+  server: {
+    port: process.env.PORT || 3000,
+    nodeEnv: process.env.NODE_ENV || 'development'
+  },
+  email: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+    testEmail: process.env.TEST_EMAIL
+  },
+  session: {
+    secret: process.env.SESSION_SECRET,
+    secure: process.env.NODE_ENV === 'production' // Use secure cookies in production
+  }
+};
 
 // Middleware
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static('public'));
 
-// Session configuration
+// Session configuration using environment variables
 app.use(session({
-  secret: 'your-secret-key-change-this-in-production',
+  secret: config.session.secret,
   resave: false,
   saveUninitialized: false,
   cookie: { 
-    secure: false, // Set to true in production with HTTPS
+    secure: config.session.secure, // Secure cookies in production
     maxAge: 30 * 60 * 1000 // 30 minutes
   }
 }));
@@ -28,12 +64,21 @@ app.use(session({
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-// Email configuration (Gmail example)
-const transporter = nodemailer.createTransporter({
+// Email configuration using environment variables
+const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: 'your-email@gmail.com', // Replace with your email
-    pass: 'your-app-password' // Use App Password for Gmail
+    user: config.email.user,
+    pass: config.email.pass
+  }
+});
+
+// Test email configuration on startup
+transporter.verify(function(error, success) {
+  if (error) {
+    console.error('❌ Email configuration error:', error.message);
+  } else {
+    console.log('✅ Email server is ready to send messages');
   }
 });
 
@@ -48,7 +93,7 @@ function generateOTP() {
 // Helper function to send OTP email
 async function sendOTPEmail(email, otp) {
   const mailOptions = {
-    from: 'your-email@gmail.com',
+    from: config.email.user,
     to: email,
     subject: 'Your Login OTP',
     html: `
@@ -61,9 +106,10 @@ async function sendOTPEmail(email, otp) {
 
   try {
     await transporter.sendMail(mailOptions);
+    console.log(`📧 OTP sent successfully to ${email}`);
     return true;
   } catch (error) {
-    console.error('Error sending email:', error);
+    console.error('❌ Error sending email:', error);
     return false;
   }
 }
@@ -131,10 +177,11 @@ app.post('/login', (req, res) => {
 
   req.session.otpKey = otpKey;
 
-  // Send OTP email
-  sendOTPEmail('sh.kinugasa@gmail.com', otp)
+  // Send OTP email to configured test email
+  sendOTPEmail(config.email.testEmail, otp)
     .then(success => {
       if (success) {
+        console.log(`🔐 OTP generated for user: ${username}`);
         res.redirect('/verify-otp');
       } else {
         res.render('login', { error: 'Failed to send OTP. Please try again.' });
@@ -183,6 +230,8 @@ app.post('/verify-otp', (req, res) => {
   req.session.username = req.session.pendingAuth.username;
   req.session.loginTime = new Date();
 
+  console.log(`✅ User authenticated successfully: ${req.session.username}`);
+
   // Clean up
   otpStore.delete(otpKey);
   req.session.pendingAuth = null;
@@ -201,9 +250,12 @@ app.get('/dashboard', requireAuth, (req, res) => {
 
 // Logout
 app.post('/logout', (req, res) => {
+  const username = req.session.username;
   req.session.destroy((err) => {
     if (err) {
-      console.error('Error destroying session:', err);
+      console.error('❌ Error destroying session:', err);
+    } else {
+      console.log(`👋 User logged out: ${username}`);
     }
     res.redirect('/login');
   });
@@ -212,16 +264,37 @@ app.post('/logout', (req, res) => {
 // Clean up expired OTPs every minute
 setInterval(() => {
   const now = Date.now();
+  let cleanedCount = 0;
   for (const [key, value] of otpStore.entries()) {
     if (now > value.expires) {
       otpStore.delete(key);
+      cleanedCount++;
     }
+  }
+  if (cleanedCount > 0) {
+    console.log(`🧹 Cleaned up ${cleanedCount} expired OTP(s)`);
   }
 }, 60000);
 
 // Start server
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+app.listen(config.server.port, () => {
+  console.log('🚀 ================================');
+  console.log(`📡 Server running on http://localhost:${config.server.port}`);
+  console.log(`🌍 Environment: ${config.server.nodeEnv}`);
+  console.log(`📧 Email configured: ${config.email.user}`);
+  console.log(`📨 Test emails sent to: ${config.email.testEmail}`);
+  console.log('🚀 ================================');
+});
+
+// Graceful shutdown handling
+process.on('SIGTERM', () => {
+  console.log('🛑 SIGTERM received, shutting down gracefully');
+  process.exit(0);
+});
+
+process.on('SIGINT', () => {
+  console.log('🛑 SIGINT received, shutting down gracefully');
+  process.exit(0);
 });
 
 // Export app for testing

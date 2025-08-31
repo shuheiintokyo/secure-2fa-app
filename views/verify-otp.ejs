@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify OTP - Two-Factor Authentication</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .otp-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+        
+        .otp-header {
+            margin-bottom: 2rem;
+        }
+        
+        .otp-header h1 {
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+        
+        .otp-header p {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .email-sent {
+            background: #d4edda;
+            color: #155724;
+            padding: 1rem;
+            border-radius: 5px;
+            margin-bottom: 1.5rem;
+            border-left: 4px solid #28a745;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #333;
+            font-weight: 500;
+        }
+        
+        .otp-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e1e1e1;
+            border-radius: 5px;
+            font-size: 1.5rem;
+            text-align: center;
+            letter-spacing: 0.5rem;
+            transition: border-color 0.3s;
+        }
+        
+        .otp-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .verify-btn {
+            width: 100%;
+            padding: 0.75rem;
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .verify-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .error-message {
+            background: #fee;
+            color: #c33;
+            padding: 0.75rem;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+            border-left: 4px solid #c33;
+        }
+        
+        .timer-container {
+            margin: 1rem 0;
+        }
+        
+        .timer {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #dc3545;
+        }
+        
+        .back-link {
+            display: inline-block;
+            margin-top: 1rem;
+            color: #667eea;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+        
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        
+        .info-box {
+            background: #fff3cd;
+            color: #856404;
+            padding: 1rem;
+            border-radius: 5px;
+            margin-top: 1.5rem;
+            border-left: 4px solid #ffc107;
+            text-align: left;
+        }
+        
+        .info-box h4 {
+            margin-bottom: 0.5rem;
+        }
+        
+        .info-box ul {
+            margin-left: 1rem;
+            font-size: 0.9rem;
+        }
+        
+        .expired {
+            color: #dc3545;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="otp-container">
+        <div class="otp-header">
+            <h1>📱 Verify OTP</h1>
+            <p>Enter the 4-digit code sent to your email</p>
+        </div>
+        
+        <div class="email-sent">
+            <strong>📧 Email Sent!</strong><br>
+            Check your inbox for the verification code
+        </div>
+        
+        <% if (error) { %>
+            <div class="error-message">
+                <%= error %>
+            </div>
+        <% } %>
+        
+        <form method="POST" action="/verify-otp">
+            <div class="form-group">
+                <label for="otp">Verification Code:</label>
+                <input type="text" id="otp" name="otp" class="otp-input" required 
+                       pattern="[0-9]{4}" maxlength="4" placeholder="0000"
+                       autocomplete="off" inputmode="numeric">
+            </div>
+            
+            <div class="timer-container">
+                <div class="timer" id="timer">60</div>
+                <small>seconds remaining</small>
+            </div>
+            
+            <button type="submit" class="verify-btn" id="verifyBtn">🔓 Verify Code</button>
+        </form>
+        
+        <a href="/login" class="back-link">← Back to Login</a>
+        
+        <div class="info-box">
+            <h4>⚠️ Important:</h4>
+            <ul>
+                <li>The OTP is valid for 60 seconds only</li>
+                <li>Enter the 4-digit code exactly as received</li>
+                <li>If expired, go back and login again</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // OTP Timer
+        let timeLeft = 60;
+        const timerElement = document.getElementById('timer');
+        const verifyBtn = document.getElementById('verifyBtn');
+        const otpInput = document.getElementById('otp');
+        
+        const countdown = setInterval(() => {
+            timeLeft--;
+            timerElement.textContent = timeLeft;
+            
+            if (timeLeft <= 0) {
+                clearInterval(countdown);
+                timerElement.textContent = 'EXPIRED';
+                timerElement.classList.add('expired');
+                verifyBtn.disabled = true;
+                verifyBtn.textContent = '⏰ Code Expired';
+                verifyBtn.style.background = '#6c757d';
+                otpInput.disabled = true;
+                
+                // Auto redirect to login after expiry
+                setTimeout(() => {
+                    window.location.href = '/login';
+                }, 3000);
+            }
+        }, 1000);
+        
+        // Auto-focus on OTP input
+        otpInput.focus();
+        
+        // Auto-format OTP input (numbers only)
+        otpInput.addEventListener('input', function(e) {
+            // Remove any non-digit characters
+            this.value = this.value.replace(/[^0-9]/g, '');
+            
+            // Auto-submit when 4 digits are entered
+            if (this.value.length === 4) {
+                // Small delay to show the complete number
+                setTimeout(() => {
+                    if (timeLeft > 0) {
+                        document.querySelector('form').submit();
+                    }
+                }, 500);
+            }
+        });
+        
+        // Prevent form submission if expired
+        document.querySelector('form').addEventListener('submit', function(e) {
+            if (timeLeft <= 0) {
+                e.preventDefault();
+                alert('The OTP has expired. Please go back and login again.');
+            }
+        });
+    </script>
+</body>
+</html>
